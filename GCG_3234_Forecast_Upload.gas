@@ -1,0 +1,559 @@
+Program.Sub.ScreenSU.Start
+gui.Form2..create
+gui.Form2..caption("0695 Forecast Upload")
+gui.Form2..size(3330,1275)
+gui.Form2..position(0,0)
+gui.Form2..alwaysontop(False)
+gui.Form2..fontname("Arial")
+gui.Form2..fontsize(8)
+gui.Form2..forecolor(0)
+gui.Form2..fontstyle(,,,,)
+gui.Form2..BackColor(-2147483633)
+gui.Form2..controlbox(True)
+gui.Form2..maxbutton(True)
+gui.Form2..minbutton(True)
+gui.Form2..mousepointer(0)
+gui.Form2..moveable(True)
+gui.Form2..sizeable(True)
+gui.Form2..ShowInTaskBar(True)
+gui.Form2..titlebar(True)
+gui.Form2.lbl2.create(label,"Loading Forecast File",True,2715,375,1,200,215,True,2,Arial,12,-2147483633,0)
+gui.Form2.lbl2.fontstyle(True,False,False,False)
+
+
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Variable.Global.sLoadDoc.Declare(String)
+Variable.Global.sShipTo.Declare(String)
+Variable.Global.sSheetData.Declare(String)
+Variable.Global.sCurMonth.Declare(String)
+
+Variable.UDT.Sheet.Define("Part",String)
+Variable.UDT.Sheet.Define("Descr",String)
+Variable.UDT.Sheet.Define("PCC",String)
+Variable.UDT.Sheet.Define("PABC",String)
+Variable.UDT.Sheet.Define("OrdPol",String)
+Variable.UDT.Sheet.Define("IHIOF",String)
+Variable.UDT.Sheet.Define("IIOBO",String)
+Variable.UDT.Sheet.Define("LastPurch",String)
+Variable.UDT.Sheet.Define("PrefVndr",String)
+Variable.UDT.Sheet.Define("VendName",String)
+Variable.UDT.Sheet.Define("LeadTime",String)
+Variable.UDT.Sheet.Define("MinQty",String)
+Variable.UDT.Sheet.Define("MultQty",String)
+Variable.UDT.Sheet.Define("Usage",String)
+Variable.UDT.Sheet.Define("Target",String)
+Variable.UDT.Sheet.Define("Planned",String)
+Variable.UDT.Sheet.Define("Mo1",String)
+Variable.UDT.Sheet.Define("Mo2",String)
+Variable.UDT.Sheet.Define("Mo3",String)
+Variable.UDT.Sheet.Define("Mo4",String)
+Variable.UDT.Sheet.Define("Mo5",String)
+Variable.UDT.Sheet.Define("Mo6",String)
+Variable.UDT.Sheet.Define("Mo7",String)
+Variable.UDT.Sheet.Define("Mo8",String)
+Variable.UDT.Sheet.Define("Mo9",String)
+Variable.UDT.Sheet.Define("Mo10",String)
+Variable.UDT.Sheet.Define("Mo11",String)
+Variable.UDT.Sheet.Define("Mo12",String)
+Variable.UDT.Sheet.Define("Mo13",String)
+Variable.UDT.Sheet.Define("Planner",String)
+Variable.UDT.Sheet.Define("TQN",String)
+Variable.uGlobal.uSheet.Declare("Sheet")
+
+Variable.UDT.InvCopy.Define("Part",String)
+Variable.UDT.InvCopy.Define("Descr",String)
+Variable.UDT.InvCopy.Define("PCC",String)
+Variable.UDT.InvCopy.Define("PABC",String)
+Variable.UDT.InvCopy.Define("OrdPol",String)
+Variable.UDT.InvCopy.Define("IHIOF",String)
+Variable.UDT.InvCopy.Define("IIOBO",String)
+Variable.UDT.InvCopy.Define("LastPurch",String)
+Variable.UDT.InvCopy.Define("PrefVndr",String)
+Variable.UDT.InvCopy.Define("VendName",String)
+Variable.UDT.InvCopy.Define("LeadTime",String)
+Variable.UDT.InvCopy.Define("MinQty",String)
+Variable.UDT.InvCopy.Define("MultQty",String)
+Variable.UDT.InvCopy.Define("Usage",String)
+Variable.UDT.InvCopy.Define("Target",String)
+Variable.UDT.InvCopy.Define("Planned",String)
+Variable.UDT.InvCopy.Define("Mo1",String)
+Variable.UDT.InvCopy.Define("Mo2",String)
+Variable.UDT.InvCopy.Define("Mo3",String)
+Variable.UDT.InvCopy.Define("Mo4",String)
+Variable.UDT.InvCopy.Define("Mo5",String)
+Variable.UDT.InvCopy.Define("Mo6",String)
+Variable.UDT.InvCopy.Define("Mo7",String)
+Variable.UDT.InvCopy.Define("Mo8",String)
+Variable.UDT.InvCopy.Define("Mo9",String)
+Variable.UDT.InvCopy.Define("Mo10",String)
+Variable.UDT.InvCopy.Define("Mo11",String)
+Variable.UDT.InvCopy.Define("Mo12",String)
+Variable.UDT.InvCopy.Define("Mo13",String)
+Variable.UDT.InvCopy.Define("Planner",String)
+Variable.UDT.InvCopy.Define("TQN",String)
+Variable.uGlobal.uInvCopy.Declare("InvCopy")
+
+Variable.UDT.InvMstr.Define("Part",String,Part)
+Variable.uGlobal.uInvMstr.Declare("InvMstr")
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+'Coded by: JCT
+'Project Start Date: 11/11/2011
+'Performance Stamping
+
+V.Local.sExceptFile.Declare(String)
+V.Local.sreplace.Declare(String)
+V.Local.sExceptiondata.Declare(String)
+V.Local.sMsg.Declare(String)
+
+F.ODBC.Connection!Con.OpenConnection(V.Ambient.PDSN,V.Ambient.PUser,V.Ambient.PPass)
+F.Intrinsic.Control.CallSub(Select_file)
+F.Intrinsic.Control.CallSub(Loaddoc,"DOC",V.Args.DOC)
+F.Intrinsic.Control.CallSub(Currentmonthplanned)
+F.Intrinsic.Control.CallSub(Partverify)
+
+' no need to continue here, if no records are left
+F.Intrinsic.Control.If(V.uGlobal.uSheet!Part.UBound,>=,0)
+	F.Intrinsic.Control.CallSub(Createupload,"CURMO",V.Args.CURMO)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.If(V.Args.NONINV.Trim,<>,"")
+	f.Intrinsic.String.Concat(v.Caller.FilesDir,"\ForecastExceptionLog_",v.Ambient.Date.pervasivedate,".csv",v.Local.sExceptFile)
+	F.Intrinsic.String.Concat(V.Ambient.DblQuote,",",V.Ambient.DblQuote,V.Local.sreplace)
+	F.Intrinsic.String.Replace(V.Args.NONINV,"*!*",V.Local.sreplace,V.Local.sExceptiondata)
+	F.Intrinsic.String.Concat(V.Ambient.DblQuote,V.Local.sExceptiondata.Trim,V.Ambient.DblQuote,V.Local.sExceptiondata)
+	F.Intrinsic.File.String2File(V.Local.sExceptFile,V.Local.sExceptiondata)
+	
+	F.Intrinsic.Control.If(V.Args.SOMETHING,=,"True")
+		F.Intrinsic.String.Concat("EA850",V.Caller.CompanyCode," file created, but unable to load all lines.",V.Ambient.NewLine,"Please review :",V.Ambient.NewLine,V.Local.sExceptFile,V.Local.sMsg)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.String.Concat("Unable to load lines.",V.Ambient.NewLine,"Please review :",V.Ambient.NewLine,V.Local.sExceptFile,V.Local.sMsg)
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.UI.Msgbox(V.Local.sMsg)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.CallSub(Unload)
+
+
+Program.Sub.Main.End
+
+Program.Sub.Unload.Start
+
+F.ODBC.Connection!Con.Close
+F.Intrinsic.Control.End
+
+Program.Sub.Unload.End
+
+Program.Sub.LoadDoc.Start
+
+
+V.Local.sData.Declare(String)
+V.Local.sSel.Declare(String)
+V.Local.sMonths.Declare(String)
+
+F.Intrinsic.UI.InvokeWaitDialog("Reading Upload Data")
+
+' read the sheet
+F.Automation.MSExcel.ReadSpreadsheet(V.Args.DOC,V.Local.sData)
+
+' make sure you read the 1st sheet in a workbook
+F.Intrinsic.String.Split(V.Local.sData,"&^&",V.Local.sData)
+V.Local.sMonths.Set("Mo1*!*Mo2*!*Mo3*!*Mo4*!*Mo5*!*Mo6*!*Mo7*!*Mo8*!*Mo9*!*Mo10*!*Mo11*!*Mo12*!*Mo13")
+F.Intrinsic.String.Concat("Part*!*Descr*!*PCC*!*PABC*!*OrdPol*!*IHIOF*!*IIOBO*!*LastPurch*!*PrefVndr*!*VendName*!*Planner*!*LeadTime*!*MinQty*!*MultQty*!*TQN*!*Usage*!*Target*!*Planned*!*",V.Local.sMonths,V.Local.sSel)
+f.Intrinsic.Variable.LoadUDTFromString(v.uGlobal.uSheet,v.Local.sSel,v.Local.sData(0),"$!$","*!*",false)
+
+Program.Sub.LoadDoc.End
+
+program.sub.Select_File.start
+V.Local.sCust.Declare(String)
+V.Local.sLoadDoc.Declare(String)
+
+'select import sheet
+F.Intrinsic.UI.ShowOpenFileDialog("","xls|*.xls","",V.Local.sLoadDoc)
+	F.Intrinsic.Control.If(V.Local.sLoadDoc,=,"***CANCEL***")
+		F.Intrinsic.Control.CallSub(Unload)
+	F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Variable.AddRV("DOC",V.Local.sLoadDoc)
+
+
+
+program.sub.Select_File.end
+
+Program.Sub.Month.Start
+
+V.Local.iCurMonth.Declare(Long)
+
+
+F.Intrinsic.Control.If(V.Args.Month,=,"JAN")
+	V.Local.iCurMonth.Set(1)
+F.Intrinsic.Control.ElseIf(V.Args.Month,=,"FEB")
+	V.Local.iCurMonth.Set(2)
+F.Intrinsic.Control.ElseIf(V.Args.Month,=,"MAR")
+	V.Local.iCurMonth.Set(3)
+F.Intrinsic.Control.ElseIf(V.Args.Month,=,"APR")
+	V.Local.iCurMonth.Set(4)
+F.Intrinsic.Control.ElseIf(V.Args.Month,=,"MAY")
+	V.Local.iCurMonth.Set(5)
+F.Intrinsic.Control.ElseIf(V.Args.Month,=,"JUN")
+	V.Local.iCurMonth.Set(6)
+F.Intrinsic.Control.ElseIf(V.Args.Month,=,"JUL")
+	V.Local.iCurMonth.Set(7)
+F.Intrinsic.Control.ElseIf(V.Args.Month,=,"AUG")
+	V.Local.iCurMonth.Set(8)
+F.Intrinsic.Control.ElseIf(V.Args.Month,=,"SEP")
+	V.Local.iCurMonth.Set(9)
+F.Intrinsic.Control.ElseIf(V.Args.Month,=,"OCT")
+	V.Local.iCurMonth.Set(10)
+F.Intrinsic.Control.ElseIf(V.Args.Month,=,"NOV")
+	V.Local.iCurMonth.Set(11)
+F.Intrinsic.Control.ElseIf(V.Args.Month,=,"DEC")
+	V.Local.iCurMonth.Set(12)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Variable.AddRV("MONTH",V.Local.iCurMonth)
+
+Program.Sub.Month.End
+
+Program.Sub.CurrentMonthPlanned.Start
+
+
+V.Local.sRet.Declare(String)
+V.Local.sSel.Declare(String)
+V.Local.sMonth.Declare(String)
+V.Local.sDateString.Declare(String)
+V.Local.iYear.Declare(Long)
+
+V.Local.sSel.Set("LIKEC::*Part*")
+F.Intrinsic.Variable.UDTMultiSeek(V.uGlobal.uSheet!Part,V.Local.sSel,V.Local.sRet)
+F.Intrinsic.String.Split(V.Local.sRet,"*!*",V.Local.sRet)
+F.Intrinsic.String.Left(V.uGlobal.uSheet(v.Local.sRet(0))!Mo1,3,V.Local.sMonth)
+
+F.Intrinsic.Control.If(V.Local.sMonth.UCase,=,"JAN")
+	V.Global.sCurMonth.Set(01)
+F.Intrinsic.Control.ElseIf(V.Local.sMonth.UCase,=,"FEB")
+	V.Global.sCurMonth.Set(02)
+F.Intrinsic.Control.ElseIf(V.Local.sMonth.UCase,=,"MAR")
+	V.Global.sCurMonth.Set(03)
+F.Intrinsic.Control.ElseIf(V.Local.sMonth.UCase,=,"APR")
+	V.Global.sCurMonth.Set(04)
+F.Intrinsic.Control.ElseIf(V.Local.sMonth.UCase,=,"MAY")
+	V.Global.sCurMonth.Set(05)
+F.Intrinsic.Control.ElseIf(V.Local.sMonth.UCase,=,"JUN")
+	V.Global.sCurMonth.Set(06)
+F.Intrinsic.Control.ElseIf(V.Local.sMonth.UCase,=,"JUL")
+	V.Global.sCurMonth.Set(07)
+F.Intrinsic.Control.ElseIf(V.Local.sMonth.UCase,=,"AUG")
+	V.Global.sCurMonth.Set(08)
+F.Intrinsic.Control.ElseIf(V.Local.sMonth.UCase,=,"SEP")
+	V.Global.sCurMonth.Set(09)
+F.Intrinsic.Control.ElseIf(V.Local.sMonth.UCase,=,"OCT")
+	V.Global.sCurMonth.Set(10)
+F.Intrinsic.Control.ElseIf(V.Local.sMonth.UCase,=,"NOV")
+	V.Global.sCurMonth.Set(11)
+F.Intrinsic.Control.ElseIf(V.Local.sMonth.UCase,=,"DEC")
+	V.Global.sCurMonth.Set(12)
+F.Intrinsic.Control.EndIf
+
+
+F.Intrinsic.Date.Year(V.Ambient.Date,V.Local.iYear)
+F.Intrinsic.String.Concat(V.Global.sCurMonth,"/01/",V.Local.iYear,V.Local.sDateString)
+F.Intrinsic.Variable.AddRV("CURMO",V.Local.sDateString)
+
+Program.Sub.CurrentMonthPlanned.End
+
+Program.Sub.createUpload.Start
+
+V.Local.sPart.Declare(String)
+V.Local.sStartDate.Declare(String)
+V.Local.sCustPart.Declare(String)
+V.Local.sExceptiondata.Declare(String)
+V.Local.bNonInv.Declare(Boolean)
+V.Local.sData.Declare(String)
+V.Local.sMonths.Declare(String)
+V.Local.sSel.Declare(String)
+V.Local.iFor.Declare(String)
+V.Local.iForMo.Declare(Long)
+V.Local.sRet.Declare(String)
+V.Local.sExceptFile.Declare(String)
+V.Local.sreplace.Declare(String)
+V.Local.sMsg.Declare(String)
+V.Local.sStatus.Declare(String)
+V.Local.dBegMonth.Declare(Date)
+V.Local.dDueDate.Declare(Date)
+V.Local.sBuyerID.Declare(String)
+V.Local.sPO.Declare(String)
+V.Local.sShipDate.Declare(String)
+V.Local.iHead.Declare(Long)
+V.Local.iHeadCt.Declare(Long)
+V.Local.sHLine.Declare(String)
+V.Local.sHShipTo.Declare(String)
+V.Local.sTemp.Declare(String)
+V.Local.sFileName.Declare(String)
+V.Local.bFileExists.Declare(Boolean)
+V.Local.iHndl.Declare(Long)
+V.Local.sHdrFiller.Declare(String)
+V.Local.iLine.Declare(Long)
+V.Local.sLine.Declare(String)
+V.Local.iOrderQty.Declare(Long)
+V.Local.sOrderQty.Declare(String)
+V.Local.sQty.Declare(String)
+V.Local.sDescription.Declare(String)
+V.Local.sShipTo.Declare(String)
+V.Local.bWritten.Declare(Boolean)
+V.Local.bSomething.Declare(Boolean)
+V.Local.iForA.Declare(Long)
+V.Local.iVal.Declare(Long)
+V.Local.dShipDate.Declare(Date)
+
+V.Local.sLnFiller.Declare(String)
+V.Local.sLnFiller0.Declare(String)
+V.Local.sLnFiller1.Declare(String)
+V.Local.sLnFiller2.Declare(String)
+V.Local.sLnFiller3.Declare(String)
+V.Local.sLnFiller4.Declare(String)
+
+
+
+F.Intrinsic.String.Concat(V.Caller.FilesDir,"\","EA850",V.Caller.CompanyCode,V.Local.sFileName)
+F.Intrinsic.File.Exists(V.Local.sFileName,V.Local.bFileExists)
+F.Intrinsic.Control.If(V.Local.bFileExists,=,True)
+	F.Intrinsic.File.DeleteFile(V.Local.sFileName)
+F.Intrinsic.Control.EndIf
+
+F.Intrinsic.File.GetHandle(V.Local.iHndl)
+
+' Non required fields spacing - For Header
+F.Intrinsic.String.RPad(V.Local.sHdrFiller," ",354,V.Local.sHdrFiller)
+
+' Non required fields spacing - For Lines
+F.Intrinsic.String.RPad(V.Local.sLnFiller," ",2,V.Local.sLnFiller)
+F.Intrinsic.String.RPad(V.Local.sLnFiller0," ",15,V.Local.sLnFiller0)
+F.Intrinsic.String.RPad(V.Local.sLnFiller1," ",133,V.Local.sLnFiller1)
+F.Intrinsic.String.RPad(V.Local.sLnFiller2," ",199,V.Local.sLnFiller2)
+F.Intrinsic.String.RPad(V.Local.sLnFiller3," ",28,V.Local.sLnFiller3)
+F.Intrinsic.String.RPad(V.Local.sLnFiller4," ",1,V.Local.sLnFiller4)
+
+V.Local.bSomething.Set(False)
+F.Intrinsic.File.OpenForWrite(V.Local.sFileName,V.Local.iHndl)
+
+F.Intrinsic.Control.For(V.Local.iFor,V.uGlobal.uInvCopy!Part.LBound,V.uGlobal.uInvCopy!Part.UBound,1)
+
+	' determine lead time
+	F.Intrinsic.Math.Mult(V.uGlobal.uInvCopy(v.Local.iFor)!LeadTime,-1,V.uGlobal.uInvCopy(v.Local.iFor)!LeadTime)
+
+	' get first of current month
+	F.Intrinsic.Date.BeginningOfMonth(V.Args.CURMO,V.Local.dBegMonth)
+
+
+	' ================HEADER===============
+	' Buyer
+	F.Intrinsic.String.Concat("select ID from Cust_Xref where Customer ='0695' ","",V.Local.sSel)
+	f.ODBC.Connection!Con.ExecuteAndReturn(v.Local.sSel,v.Local.sRet)
+	F.Intrinsic.Control.If(V.Local.sRet.Trim,<>,"")
+		F.Intrinsic.String.Split(V.Local.sRet,"*!*",V.Local.sRet)
+		V.Local.sBuyerID.Set(V.Local.sRet(0))
+	F.Intrinsic.Control.Else
+		V.Local.sBuyerID.Set("0695")
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.String.RPad(V.Local.sBuyerID," ",35,V.Local.sBuyerID)
+
+	'PO Number
+	F.Intrinsic.String.RPad(V.Local.sPO(0).Trim," ",15,V.Local.sPO)
+
+	' first header rec Number will be 000
+	' header should always be 000
+	V.Local.iHead.Set(0)
+	V.Local.iHeadCt.Set(-1)
+	V.Local.sHLine.Set("000")
+
+	' ship to
+	V.Local.sHShipTo.Set("0695")
+	F.Intrinsic.String.RPad(V.Local.sHShipTo," ",76,V.Local.sHShipTo)
+
+	' due/ship date
+'	V.Local.sShipDate.Set(V.Local.sRqdDate)
+
+		'Concat Header Row
+	'	' Buyer(35), PO(15), Line(3), Change(1), Blank(456), H(1), Blank(1)
+	'	F.Intrinsic.String.Concat(V.Local.sBuyerID,V.Local.sPO,V.Local.sHLine," ",V.Local.sShipDate,"        ",V.Local.sHShipTo,"0000000000",V.Local.sHdrFiller,"H ",V.Local.sTemp)
+	'	F.Intrinsic.File.WriteLine(V.Local.iHndl,V.Local.sTemp)
+
+	' =================LINES===================
+	F.Intrinsic.String.Concat("Creating EA850",V.Caller.CompanyCode," File",V.Ambient.NewLine,"Part ",V.Local.iFor," of ",V.uGlobal.uInvCopy!Part.UBound,V.Local.sSel)
+	F.Intrinsic.UI.ChangeWaitStatus(V.Local.sSel)
+
+	' first line by PO is 001
+	V.Local.iLine.Set(0)
+	V.Local.iHeadCt.Set(0)
+	V.Local.bWritten.Set(False)
+
+	' Cust part
+	F.Intrinsic.String.Replace(V.uGlobal.uInvCopy(v.Local.iFor)!Part,"'","''",V.Local.sCustPart)
+	F.Intrinsic.String.Concat("select PART from CUSTOMER_PART where CUSTOMER_PART ='",V.Local.sCustPart.Trim,"' ",V.Local.sSel)
+	f.ODBC.Connection!Con.ExecuteAndReturn(v.Local.sSel,v.Local.sRet)
+	F.Intrinsic.Control.If(V.Local.sRet.Trim,<>,"")
+		F.Intrinsic.String.Split(V.Local.sRet,"#$#",V.Local.sRet)
+		F.Intrinsic.String.Split(V.Local.sRet(0),"*!*",V.Local.sRet)
+		V.Local.sPart.Set(V.Local.sRet(0))
+	F.Intrinsic.Control.Else
+		V.Local.sPart.Set(V.Local.sCustPart.Trim)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.String.Replace(V.Local.sPart,"'","''",V.Local.sPart)
+
+	F.Intrinsic.Date.ConvertDString(V.Args.CURMO,"MM/DD/YYYY",V.Local.dDueDate)
+
+	' split out the month buckets.  WIll write a line on the EA850ccc for each bucket where qty>0
+	F.Intrinsic.Control.For(V.Local.iForMo,2,13,1)
+
+		' Item Promise Date
+		F.Intrinsic.Date.DateAdd("M",1,V.Local.dDueDate,V.Local.dDueDate)
+
+		' don't create line for 0 amounts; if not on the last loop move next, else exit the loop
+		F.Intrinsic.Control.If(V.uGlobal.uSheet(v.Local.iFor)!mo[v.Local.iForMo],=,"")
+			F.Intrinsic.Control.If(V.Local.iForMo,<>,13)
+				F.Intrinsic.Control.Next(V.Local.iForMo)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.Control.ExitFor(V.Local.iForMo)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.EndIf
+
+		' get due date from lead time
+		F.Intrinsic.Date.DateAdd("D",V.uGlobal.uInvCopy(v.Local.iFor)!LeadTime,V.Local.dDueDate,V.Local.dShipDate)
+		F.Intrinsic.String.Format(V.Local.dShipDate,"yyyymmdd",V.Local.sShipDate)
+
+		' got this far, so wrting something
+		V.Local.bSomething.Set(True)
+
+		' only need a header row, for parts with data, and only need one header rec
+		'Concat Header Row
+		' Buyer(35), PO(15), Line(3), Change(1), Blank(456), H(1), Blank(1)
+		F.Intrinsic.String.Concat(V.Local.sBuyerID,V.Local.sPO,V.Local.sHLine," ",V.Local.sShipDate,"        ",V.Local.sHShipTo,"0000000000",V.Local.sHdrFiller,"H ",V.Local.sTemp)
+		F.Intrinsic.File.WriteLine(V.Local.iHndl,V.Local.sTemp)
+
+		' Line Number
+		F.Intrinsic.Math.Add(V.Local.iLine,1,V.Local.iLine)
+		F.Intrinsic.String.LPad(V.Local.iLine,"0",3,V.Local.sLine)
+		F.Intrinsic.String.LPad(V.Local.sLine,"0",3,V.Local.sLine)
+
+		' Customer Part
+		F.Intrinsic.String.RPad(V.uGlobal.uInvCopy(v.Local.iFor)!Part," ",20,V.Local.sCustPart)
+
+		' Status/Type
+		F.Intrinsic.Control.If(V.Local.iForMo,=,2)
+			V.Local.sStatus.Set("F")
+		F.Intrinsic.Control.Else
+			V.Local.sStatus.Set("P")
+		F.Intrinsic.Control.EndIf
+
+		' Order qty
+		' check for decimal.  It will be implied on the upload txt
+'		F.Intrinsic.String.Instr(V.uGlobal.uSheet(v.Local.iFor)!mo[v.Local.iForMo],".",V.Local.iOrderQty)
+		F.Intrinsic.Control.If(V.Local.iOrderQty,>,0)
+			F.Intrinsic.String.Split(V.uGlobal.uInvCopy(v.Local.iFor)!mo[v.Local.iForMo],".",V.Local.sOrderQty)
+			F.Intrinsic.String.LPad(V.Local.sOrderQty(0),"0",8,V.Local.sOrderQty(0))
+			F.Intrinsic.String.RPad(V.Local.sOrderQty(1),"0",4,V.Local.sOrderQty(1))
+			F.Intrinsic.String.Concat(V.Local.sOrderQty(0),V.Local.sOrderQty(1),V.Local.sQty)
+		F.Intrinsic.Control.Else
+			V.Local.sQty.Set(V.uGlobal.uInvCopy(v.Local.iFor)!mo[v.Local.iForMo])
+			F.Intrinsic.String.LPad(V.Local.sQty,"0",8,V.Local.sQty)
+			F.Intrinsic.String.RPad(V.Local.sQty,"0",12,V.Local.sQty)
+		F.Intrinsic.Control.EndIf
+
+		' Description
+		F.Intrinsic.String.RPad(V.uGlobal.uInvCopy(v.Local.iFor)!Descr," ",30,V.Local.sDescription)
+
+		' ship to
+		F.Intrinsic.String.RPad(V.Local.sHShipTo," ",17,V.Local.sShipTo)
+
+		' create line record
+		' Buyer(35), PO(15), Line(3), Change(1), Part(20), Blank(2), Qty(12), Blank(15),Description(30), Blank(133), Due Date(8), Status(1), ShipTo(17), Blank(182), Promise Date(8), Blank(28), L(1), Blank(1)
+		F.Intrinsic.String.Concat(V.Local.sBuyerID,V.Local.sPO,V.Local.sLine," ",V.Local.sCustPart,V.Local.sLnFiller,V.Local.sQty,V.Local.sLnFiller0,V.Local.sDescription,V.Local.sLnFiller1,"        ",V.Local.sStatus,V.Local.sLnFiller2,V.Local.sShipDate,V.Local.sLnFiller3,"1",V.Local.sLnFiller4,V.Local.sTemp)
+		F.Intrinsic.File.WriteLine(V.Local.iHndl,V.Local.sTemp)
+
+	F.Intrinsic.Control.Next(V.Local.iForMo)
+
+F.Intrinsic.Control.Next(V.Local.iFor)
+
+
+F.Intrinsic.Variable.AddRV("SOMETHING",V.Local.bSomething)
+F.Intrinsic.UI.CloseWaitDialog
+
+Program.Sub.createUpload.End
+
+Program.Sub.partVerify.Start
+
+
+V.Local.iFor.Declare(Long)
+V.Local.iForRet.Declare(Long)
+V.Local.sMsg.Declare(String)
+V.Local.sRetA.Declare(String)
+V.Local.sRetB.Declare(String)
+V.Local.sVal.Declare(String)
+V.Local.sMonths.Declare(String)
+V.Local.sElements.Declare(String)
+V.Local.sHold.Declare(String)
+V.Local.sSel.Declare(String)
+
+' only need lines from Performance Stamping
+V.Local.sSel.Set("NOTLIKEC::Performance Stamping*")
+F.Intrinsic.Variable.UDTMultiFlag(V.uGlobal.uSheet!VendName,V.Local.sSel)
+F.Intrinsic.Variable.UDTDeleteFlagged(V.uGlobal.uSheet)
+
+' get a copy of the incoming file data to compare unique part numbers
+F.Intrinsic.Variable.UDTCopy(V.uGlobal.uSheet,V.uGlobal.uInvCopy,False)
+F.Intrinsic.Variable.UDTMultiFlagDuplicates(V.uGlobal.uInvCopy!Part)
+F.Intrinsic.Variable.UDTDeleteFlagged(V.uGlobal.uInvCopy)
+
+' get all parts
+F.ODBC.Connection!Con.OpenRecordsetRO("rstSel","select Part from Inventory_Mstr order by Part")
+	F.Intrinsic.Control.If(V.ODBC.Con!rstSel.EOF,=,False)
+		F.Intrinsic.Variable.LoadUDTFromRecordset("Con","rstSel","v.uGlobal.uInvMstr",False,1)
+	F.Intrinsic.Control.EndIf
+F.ODBC.Con!rstSel.Close
+
+
+V.Local.sHold.Set("")
+
+' for each unique part
+F.Intrinsic.Control.For(V.Local.iFor,1,V.uGlobal.uInvCopy!Part.UBound,1)
+	F.Intrinsic.String.Concat("Verifying Parts",V.Ambient.NewLine,V.Local.iFor," of ",V.uGlobal.uInvCopy!Part.UBound,V.Local.sMsg)
+	F.Intrinsic.UI.ChangeWaitStatus(V.Local.sMsg)
+
+	F.Intrinsic.Variable.UDTMultiSeek(V.uGlobal.uInvMstr!Part,V.uGlobal.uInvCopy(v.Local.iFor)!Part,V.Local.sRetA)
+
+	' if the part is not found, look for that part on the main udt of information
+	' add those lines of information to the exception udt and flag them for deletion
+	F.Intrinsic.Control.If(V.Local.sRetA.Trim,=,"")
+		F.Intrinsic.Variable.UDTMultiSeek(V.uGlobal.uSheet!Part,V.uGlobal.uInvCopy(v.Local.iFor)!Part,V.Local.sRetB)
+		F.Intrinsic.String.Split(V.Local.sRetB,"*!*",V.Local.sRetB)
+		F.Intrinsic.Control.For(V.Local.iForRet,V.Local.sRetB.LBound,V.Local.sRetB.UBound,1)
+		
+			V.Local.sMonths.Set("Mo1*!*Mo2*!*Mo3*!*Mo4*!*Mo5*!*Mo6*!*Mo7*!*Mo8*!*Mo9*!*Mo10*!*Mo11*!*Mo12*!*Mo13")
+			F.Intrinsic.String.Concat("Part*!*Descr*!*PCC*!*PABC*!*OrdPol*!*IHIOF*!*IIOBO*!*LastPurch*!*PrefVndr*!*VendName*!*Planner*!*LeadTime*!*MinQty*!*MultQty*!*TQN*!*Usage*!*Target*!*Planned*!*",V.Local.sMonths,V.Local.sElements)
+			f.Intrinsic.Variable.UDTPositionToString(v.uGlobal.uSheet,v.Local.sElements,v.Local.sRetB(v.Local.iForRet).Long,"*!*",v.Local.sVal)
+			F.Intrinsic.String.Concat(V.Local.sHold,V.Local.sVal,V.Ambient.NewLine,V.Local.sHold)
+
+		F.Intrinsic.Control.Next(V.Local.iForRet)
+
+		F.Intrinsic.Variable.UDTMultiFlag(V.uGlobal.uSheet!Part,V.uGlobal.uInvCopy(v.Local.iFor)!Part)
+		F.Intrinsic.Variable.UDTMultiFlag(V.uGlobal.uInvCopy!Part,V.uGlobal.uInvCopy(v.Local.iFor)!Part)
+
+	F.Intrinsic.Control.EndIf
+
+F.Intrinsic.Control.Next(V.Local.iFor)
+
+F.Intrinsic.Variable.UDTDeleteFlagged(V.uGlobal.uSheet)
+F.Intrinsic.Variable.UDTDeleteFlagged(V.uGlobal.uInvCopy)
+
+F.Intrinsic.Variable.AddRV("NONINV",V.Local.sHold)
+
+
+Program.Sub.partVerify.End
+
+
